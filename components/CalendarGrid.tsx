@@ -44,7 +44,7 @@ const timeToMinutes = (time: string) => {
 
 
 const CalendarGrid: React.FC<CalendarGridProps> = ({ weekDates, events, onSelectSlot, onSelectEvent, colorMap }) => {
-  const HOUR_HEIGHT_IN_REM = 5; // h-20 = 5rem
+  const HOUR_HEIGHT_IN_REM = 6; // h-24 = 6rem
 
   const getCategoryFromColor = (color: string) => {
     return Object.keys(colorMap).find(key => colorMap[key] === color) || '';
@@ -56,7 +56,7 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({ weekDates, events, onSelect
       <div className="relative">
         <div className="sticky top-0 z-[2] bg-gray-100 dark:bg-gray-900 h-[70px]">&nbsp;</div> {/* Spacer for day headers */}
         {hours.map(hour => (
-          <div key={hour} className="h-20 flex justify-end items-start pr-2 -mt-2">
+          <div key={hour} className="h-24 flex justify-end items-start pr-2 pt-2">
             <span className="text-xs text-gray-500 dark:text-gray-400">
               {hour.toString().padStart(2, '0')}:00
             </span>
@@ -121,7 +121,7 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({ weekDates, events, onSelect
               {hours.map(hour => (
                 <div
                   key={hour}
-                  className="h-20 border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer transition-colors"
+                  className="h-24 border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer transition-colors"
                   onClick={() => onSelectSlot({ date, hour })}
                 />
               ))}
