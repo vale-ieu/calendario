@@ -8,16 +8,18 @@ interface CalendarHeaderProps {
   colorMap: { [key: string]: string };
   activeFilter: string | null;
   onFilterChange: (filter: string | null) => void;
+  onManageCategories: () => void;
 }
 
-const CalendarHeader: React.FC<CalendarHeaderProps> = ({ 
-  currentDate, 
-  onPrevWeek, 
-  onNextWeek, 
+const CalendarHeader: React.FC<CalendarHeaderProps> = ({
+  currentDate,
+  onPrevWeek,
+  onNextWeek,
   onGoToToday,
   colorMap,
   activeFilter,
-  onFilterChange
+  onFilterChange,
+  onManageCategories
 }) => {
   const monthName = currentDate.toLocaleString('it-IT', { month: 'long' });
   const year = currentDate.getFullYear();
@@ -57,7 +59,7 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({
         </div>
       </div>
       <div className="mt-4 flex flex-wrap items-center gap-2">
-        <button 
+        <button
           onClick={() => onFilterChange(null)}
           className={`px-3 py-1 text-xs font-medium rounded-full border ${activeFilter === null ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600'}`}
         >
@@ -78,6 +80,12 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({
              <span className="capitalize">{type}</span>
           </button>
         ))}
+        <button
+          onClick={onManageCategories}
+          className="ml-auto px-3 py-1 text-xs font-medium rounded-full border border-dashed border-indigo-400 text-indigo-600 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-500/10"
+        >
+          Gestisci categorie
+        </button>
       </div>
     </header>
   );

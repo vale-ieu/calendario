@@ -19,6 +19,11 @@ const colorClasses: { [key: string]: { bg: string, border: string, text: string,
   yellow: { bg: 'bg-yellow-500/20 dark:bg-yellow-500/25', border: 'border-yellow-500', text: 'text-yellow-800 dark:text-yellow-100', dot: 'bg-yellow-500' },
   indigo: { bg: 'bg-indigo-500/20 dark:bg-indigo-500/25', border: 'border-indigo-500', text: 'text-indigo-800 dark:text-indigo-100', dot: 'bg-indigo-500' },
   pink: { bg: 'bg-pink-500/20 dark:bg-pink-500/25', border: 'border-pink-500', text: 'text-pink-800 dark:text-pink-100', dot: 'bg-pink-500' },
+  orange: { bg: 'bg-orange-500/20 dark:bg-orange-500/25', border: 'border-orange-500', text: 'text-orange-800 dark:text-orange-100', dot: 'bg-orange-500' },
+  teal: { bg: 'bg-teal-500/20 dark:bg-teal-500/25', border: 'border-teal-500', text: 'text-teal-800 dark:text-teal-100', dot: 'bg-teal-500' },
+  cyan: { bg: 'bg-cyan-500/20 dark:bg-cyan-500/25', border: 'border-cyan-500', text: 'text-cyan-800 dark:text-cyan-100', dot: 'bg-cyan-500' },
+  emerald: { bg: 'bg-emerald-500/20 dark:bg-emerald-500/25', border: 'border-emerald-500', text: 'text-emerald-800 dark:text-emerald-100', dot: 'bg-emerald-500' },
+  gray: { bg: 'bg-gray-500/20 dark:bg-gray-500/25', border: 'border-gray-500', text: 'text-gray-800 dark:text-gray-100', dot: 'bg-gray-500' },
 };
 
 const isToday = (date: Date) => {

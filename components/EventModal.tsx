@@ -17,19 +17,24 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, onSave, onDele
   const [date, setDate] = useState(new Date());
   const [startTime, setStartTime] = useState('08:00');
   const [endTime, setEndTime] = useState('09:00');
-  const [color, setColor] = useState('blue');
+  const initialColor = Object.values(colorMap)[0] || 'blue';
+  const [color, setColor] = useState(initialColor);
   const [todos, setTodos] = useState<ToDoItem[]>([]);
   const [newTodoText, setNewTodoText] = useState('');
   const [error, setError] = useState('');
 
   useEffect(() => {
+    const availableColors = Object.values(colorMap);
+    const fallbackColor = availableColors[0] || 'blue';
+
     if (event) {
+      const safeColor = availableColors.includes(event.color) ? event.color : fallbackColor;
       setTitle(event.title);
       setDescription(event.description || '');
       setDate(new Date(event.date));
       setStartTime(event.startTime);
       setEndTime(event.endTime);
-      setColor(event.color);
+      setColor(safeColor);
       setTodos(event.todos || []);
     } else if (selectedSlot) {
       const startHour = selectedSlot.hour.toString().padStart(2, '0');
@@ -39,12 +44,12 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, onSave, onDele
       setDate(new Date(selectedSlot.date));
       setStartTime(`${startHour}:00`);
       setEndTime(`${endHour}:00`);
-      setColor('blue'); // Default color for new events
+      setColor(fallbackColor);
       setTodos([]);
     }
     setError('');
     setNewTodoText('');
-  }, [event, selectedSlot, isOpen]);
+  }, [event, selectedSlot, isOpen, colorMap]);
 
   const handleSave = useCallback(() => {
     if (!title.trim()) {

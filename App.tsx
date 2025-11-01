@@ -3,10 +3,13 @@ import { Event, SelectedSlot } from './types';
 import CalendarHeader from './components/CalendarHeader';
 import CalendarGrid from './components/CalendarGrid';
 import EventModal from './components/EventModal';
+import CategoryManagerModal, { CategoryDefinition } from './components/CategoryManagerModal';
 import { scheduleData } from './scheduleData';
 
 
-const typeToColorMap: { [key: string]: string } = {
+const AVAILABLE_COLORS = ['blue', 'green', 'red', 'purple', 'yellow', 'indigo', 'pink', 'orange', 'teal', 'cyan', 'emerald', 'gray'] as const;
+
+const initialCategoryMap: { [key: string]: string } = {
   startup: 'blue',
   learn: 'green',
   school: 'red',
@@ -47,7 +50,7 @@ const generateInitialEvents = () => {
           date: new Date(currentDate),
           startTime: item.s,
           endTime: item.e,
-          color: typeToColorMap[item.t] || 'blue',
+          color: initialCategoryMap[item.t] || 'blue',
           todos: [],
         });
       });
@@ -65,6 +68,8 @@ const App: React.FC = () => {
   const [selectedSlot, setSelectedSlot] = useState<SelectedSlot | null>(null);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
+  const [colorMap, setColorMap] = useState<{ [key: string]: string }>(initialCategoryMap);
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
 
 
   const handlePrevWeek = useCallback(() => {
@@ -143,6 +148,44 @@ const App: React.FC = () => {
     return events.filter(event => event.color === activeFilter);
   }, [events, activeFilter]);
 
+  const categoryList = useMemo<CategoryDefinition[]>(() => (
+    Object.entries(colorMap).map(([name, color]) => ({ name, color }))
+  ), [colorMap]);
+
+  const handleOpenCategoryManager = useCallback(() => {
+    setIsCategoryModalOpen(true);
+  }, []);
+
+  const handleCloseCategoryManager = useCallback(() => {
+    setIsCategoryModalOpen(false);
+  }, []);
+
+  const handleSaveCategories = useCallback((categories: CategoryDefinition[]) => {
+    if (!categories.length) {
+      return;
+    }
+
+    const nextMap = categories.reduce<{ [key: string]: string }>((acc, category) => {
+      acc[category.name] = category.color;
+      return acc;
+    }, {});
+
+    setColorMap(nextMap);
+
+    const allowedColors = new Set(categories.map(category => category.color));
+    const fallbackColor = categories[0]?.color ?? AVAILABLE_COLORS[0];
+
+    setEvents(prevEvents => prevEvents.map(event => (
+      allowedColors.has(event.color)
+        ? event
+        : { ...event, color: fallbackColor }
+    )));
+
+    if (activeFilter && !allowedColors.has(activeFilter)) {
+      setActiveFilter(null);
+    }
+  }, [activeFilter]);
+
   return (
     <div className="flex flex-col h-screen font-sans">
       <CalendarHeader
@@ -150,9 +193,10 @@ const App: React.FC = () => {
         onPrevWeek={handlePrevWeek}
         onNextWeek={handleNextWeek}
         onGoToToday={handleGoToToday}
-        colorMap={typeToColorMap}
+        colorMap={colorMap}
         activeFilter={activeFilter}
         onFilterChange={setActiveFilter}
+        onManageCategories={handleOpenCategoryManager}
       />
       <main className="flex-1 overflow-auto">
         <CalendarGrid
@@ -160,7 +204,7 @@ const App: React.FC = () => {
           events={filteredEvents}
           onSelectSlot={openModalForSlot}
           onSelectEvent={openModalForEvent}
-          colorMap={typeToColorMap}
+          colorMap={colorMap}
         />
       </main>
       {isModalOpen && (
@@ -171,7 +215,16 @@ const App: React.FC = () => {
           onDelete={handleDeleteEvent}
           event={editingEvent}
           selectedSlot={selectedSlot}
-          colorMap={typeToColorMap}
+          colorMap={colorMap}
+        />
+      )}
+      {isCategoryModalOpen && (
+        <CategoryManagerModal
+          isOpen={isCategoryModalOpen}
+          onClose={handleCloseCategoryManager}
+          categories={categoryList}
+          onSave={handleSaveCategories}
+          availableColors={[...AVAILABLE_COLORS]}
         />
       )}
     </div>
