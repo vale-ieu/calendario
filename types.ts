@@ -19,3 +19,20 @@ export interface SelectedSlot {
   date: Date;
   hour: number;
 }
+
+export interface AssistantEventInput {
+  id?: string;
+  title?: string;
+  description?: string;
+  date?: string;
+  startTime?: string;
+  endTime?: string;
+  color?: string;
+  category?: string;
+  todos?: Partial<ToDoItem>[];
+}
+
+export interface AssistantAction {
+  type: 'create' | 'update' | 'delete';
+  event?: AssistantEventInput;
+}

@@ -1,10 +1,11 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { Event, SelectedSlot } from './types';
+import { Event, SelectedSlot, AssistantAction, AssistantEventInput, ToDoItem } from './types';
 import CalendarHeader from './components/CalendarHeader';
 import CalendarGrid from './components/CalendarGrid';
 import EventModal from './components/EventModal';
 import CategoryManagerModal, { CategoryDefinition } from './components/CategoryManagerModal';
 import { scheduleData } from './scheduleData';
+import AssistantChat from './components/AssistantChat';
 
 
 const AVAILABLE_COLORS = ['blue', 'green', 'red', 'purple', 'yellow', 'indigo', 'pink', 'orange', 'teal', 'cyan', 'emerald', 'gray'] as const;
@@ -126,6 +127,147 @@ const App: React.FC = () => {
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
   const [colorMap, setColorMap] = useState<{ [key: string]: string }>(loadStoredCategories);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [isAssistantOpen, setIsAssistantOpen] = useState(false);
+
+  const generateTodoId = useCallback(() => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`, []);
+
+  const normaliseTodos = useCallback((todos?: Partial<ToDoItem>[]) => {
+    if (!todos) {
+      return [];
+    }
+
+    return todos
+      .filter((todo): todo is Partial<ToDoItem> => typeof todo === 'object' && todo !== null)
+      .map(todo => ({
+        id: todo.id || generateTodoId(),
+        text: todo.text ?? '',
+        completed: Boolean(todo.completed),
+      }));
+  }, [generateTodoId]);
+
+  const parseAssistantDate = useCallback((value?: string) => {
+    if (!value) {
+      return null;
+    }
+
+    const parsed = new Date(value);
+
+    if (Number.isNaN(parsed.getTime())) {
+      return null;
+    }
+
+    return parsed;
+  }, []);
+
+  const resolveEventColor = useCallback((input?: AssistantEventInput, map?: { [key: string]: string }) => {
+    const providedColor = input?.color;
+    const providedCategory = input?.category;
+    const fallbackColor = Object.values(map ?? {}).at(0) ?? AVAILABLE_COLORS[0];
+
+    if (providedColor && Object.values(map ?? {}).includes(providedColor)) {
+      return providedColor;
+    }
+
+    if (providedCategory && map && map[providedCategory]) {
+      return map[providedCategory];
+    }
+
+    return fallbackColor;
+  }, []);
+
+  const applyAssistantActions = useCallback((actions: AssistantAction[]) => {
+    if (!actions.length) {
+      return;
+    }
+
+    setEvents(prevEvents => {
+      let nextEvents = [...prevEvents];
+
+      actions.forEach(action => {
+        if (!action || typeof action !== 'object') {
+          return;
+        }
+
+        if (action.type === 'create') {
+          const eventInput = action.event;
+
+          if (!eventInput) {
+            return;
+          }
+
+          const parsedDate = parseAssistantDate(eventInput.date);
+
+          if (!parsedDate) {
+            return;
+          }
+
+          const newEvent: Event = {
+            id: eventInput.id || Date.now().toString(),
+            title: eventInput.title?.trim() || 'Nuovo evento',
+            description: eventInput.description?.trim() || '',
+            date: parsedDate,
+            startTime: eventInput.startTime || '09:00',
+            endTime: eventInput.endTime || '10:00',
+            color: resolveEventColor(eventInput, colorMap),
+            todos: normaliseTodos(eventInput.todos),
+          };
+
+          nextEvents = [...nextEvents, newEvent];
+          return;
+        }
+
+        if (action.type === 'update') {
+          const eventInput = action.event;
+          const targetId = eventInput?.id;
+
+          if (!eventInput || !targetId) {
+            return;
+          }
+
+          const index = nextEvents.findIndex(event => event.id === targetId);
+
+          if (index === -1) {
+            return;
+          }
+
+          const parsedDate = eventInput.date ? parseAssistantDate(eventInput.date) : null;
+
+          const shouldUpdateColor = Boolean(eventInput.color || eventInput.category);
+
+          nextEvents = nextEvents.map((event, eventIndex) => {
+            if (eventIndex !== index) {
+              return event;
+            }
+
+            return {
+              ...event,
+              title: eventInput.title?.trim() || event.title,
+              description: eventInput.description !== undefined ? eventInput.description.trim() : event.description,
+              date: parsedDate ?? event.date,
+              startTime: eventInput.startTime || event.startTime,
+              endTime: eventInput.endTime || event.endTime,
+              color: shouldUpdateColor ? resolveEventColor(eventInput, colorMap) : event.color,
+              todos: eventInput.todos ? normaliseTodos(eventInput.todos) : event.todos,
+            };
+          });
+
+          return;
+        }
+
+        if (action.type === 'delete') {
+          const targetId = action.event?.id;
+
+          if (!targetId) {
+            return;
+          }
+
+          nextEvents = nextEvents.filter(event => event.id !== targetId);
+        }
+      });
+
+      return nextEvents;
+    });
+  }, [colorMap, normaliseTodos, parseAssistantDate, resolveEventColor]);
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -302,6 +444,21 @@ const App: React.FC = () => {
           categories={categoryList}
           onSave={handleSaveCategories}
           availableColors={[...AVAILABLE_COLORS]}
+        />
+      )}
+      <button
+        type="button"
+        onClick={() => setIsAssistantOpen(prev => !prev)}
+        className="fixed bottom-6 right-6 rounded-full bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-indigo-700"
+      >
+        {isAssistantOpen ? 'Nascondi assistente' : 'Apri assistente AI'}
+      </button>
+      {isAssistantOpen && (
+        <AssistantChat
+          events={events}
+          colorMap={colorMap}
+          onApplyActions={applyAssistantActions}
+          onClose={() => setIsAssistantOpen(false)}
         />
       )}
     </div>
