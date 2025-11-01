@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { Event, SelectedSlot } from './types';
 import CalendarHeader from './components/CalendarHeader';
 import CalendarGrid from './components/CalendarGrid';
@@ -20,6 +20,9 @@ const initialCategoryMap: { [key: string]: string } = {
 };
 
 const dayMap = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+
+const EVENTS_STORAGE_KEY = 'calendario.events';
+const CATEGORY_STORAGE_KEY = 'calendario.categories';
 
 const generateInitialEvents = () => {
   const today = new Date();
@@ -61,15 +64,89 @@ const generateInitialEvents = () => {
 };
 
 
+const loadStoredEvents = (): Event[] => {
+  if (typeof window === 'undefined') {
+    return generateInitialEvents();
+  }
+
+  const storedEvents = window.localStorage.getItem(EVENTS_STORAGE_KEY);
+
+  if (!storedEvents) {
+    return generateInitialEvents();
+  }
+
+  try {
+    const parsedEvents = JSON.parse(storedEvents);
+
+    if (!Array.isArray(parsedEvents)) {
+      return generateInitialEvents();
+    }
+
+    return parsedEvents.map(event => ({
+      ...event,
+      date: new Date(event.date),
+    }));
+  } catch (error) {
+    console.error('Failed to parse stored events. Falling back to defaults.', error);
+    return generateInitialEvents();
+  }
+};
+
+const loadStoredCategories = (): { [key: string]: string } => {
+  if (typeof window === 'undefined') {
+    return initialCategoryMap;
+  }
+
+  const storedCategories = window.localStorage.getItem(CATEGORY_STORAGE_KEY);
+
+  if (!storedCategories) {
+    return initialCategoryMap;
+  }
+
+  try {
+    const parsedCategories = JSON.parse(storedCategories);
+
+    if (!parsedCategories || typeof parsedCategories !== 'object') {
+      return initialCategoryMap;
+    }
+
+    return parsedCategories as { [key: string]: string };
+  } catch (error) {
+    console.error('Failed to parse stored categories. Falling back to defaults.', error);
+    return initialCategoryMap;
+  }
+};
+
 const App: React.FC = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [events, setEvents] = useState<Event[]>(generateInitialEvents);
+  const [events, setEvents] = useState<Event[]>(loadStoredEvents);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<SelectedSlot | null>(null);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
-  const [colorMap, setColorMap] = useState<{ [key: string]: string }>(initialCategoryMap);
+  const [colorMap, setColorMap] = useState<{ [key: string]: string }>(loadStoredCategories);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const serializableEvents = events.map(event => ({
+      ...event,
+      date: event.date.toISOString(),
+    }));
+
+    window.localStorage.setItem(EVENTS_STORAGE_KEY, JSON.stringify(serializableEvents));
+  }, [events]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    window.localStorage.setItem(CATEGORY_STORAGE_KEY, JSON.stringify(colorMap));
+  }, [colorMap]);
 
 
   const handlePrevWeek = useCallback(() => {
