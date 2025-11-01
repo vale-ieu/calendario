@@ -1,0 +1,5 @@
+{
+  "name": "Calendario Settimanale Editabile",
+  "description": "Un'applicazione di calendario settimanale interattiva che consente agli utenti di creare, modificare ed eliminare eventi in una visualizzazione a griglia. Costruita con React e Tailwind CSS.",
+  "requestFramePermissions": []
+}
