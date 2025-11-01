@@ -53,7 +53,7 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({ weekDates, events, onSelect
   return (
     <div className="grid grid-cols-[auto,1fr] min-w-[800px]">
       {/* Time column */}
-      <div className="relative">
+      <div className="relative w-16 border-r border-gray-200 dark:border-gray-700">
         <div className="sticky top-0 z-[2] bg-gray-100 dark:bg-gray-900 h-[70px]">&nbsp;</div> {/* Spacer for day headers */}
         {hours.map(hour => (
           <div
@@ -68,7 +68,7 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({ weekDates, events, onSelect
       </div>
 
       {/* Days grid */}
-      <div className="grid grid-cols-7 border-l border-gray-200 dark:border-gray-700">
+      <div className="grid grid-cols-7">
         {weekDates.map((date, dayIndex) => {
             const dayEvents = events
               .filter(e => new Date(e.date).toDateString() === date.toDateString());
