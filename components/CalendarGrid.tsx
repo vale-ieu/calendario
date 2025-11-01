@@ -56,8 +56,11 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({ weekDates, events, onSelect
       <div className="relative">
         <div className="sticky top-0 z-[2] bg-gray-100 dark:bg-gray-900 h-[70px]">&nbsp;</div> {/* Spacer for day headers */}
         {hours.map(hour => (
-          <div key={hour} className="h-28 flex justify-end items-start pr-2 pt-2 first:pt-0">
-            <span className="text-xs text-gray-500 dark:text-gray-400">
+          <div
+            key={hour}
+            className="relative h-28 border-b border-gray-200 dark:border-gray-700 last:border-b-0"
+          >
+            <span className="absolute right-2 top-1 text-xs text-gray-500 dark:text-gray-400">
               {hour.toString().padStart(2, '0')}:00
             </span>
           </div>
