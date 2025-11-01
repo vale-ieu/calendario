@@ -44,7 +44,7 @@ const timeToMinutes = (time: string) => {
 
 
 const CalendarGrid: React.FC<CalendarGridProps> = ({ weekDates, events, onSelectSlot, onSelectEvent, colorMap }) => {
-  const HOUR_HEIGHT_IN_REM = 7; // h-28 = 7rem
+  const HOUR_HEIGHT_IN_REM = 10; // h-28 = 7rem
 
   const getCategoryFromColor = (color: string) => {
     return Object.keys(colorMap).find(key => colorMap[key] === color) || '';
