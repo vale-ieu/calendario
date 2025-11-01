@@ -10,12 +10,12 @@ import { scheduleData } from './scheduleData';
 const AVAILABLE_COLORS = ['blue', 'green', 'red', 'purple', 'yellow', 'indigo', 'pink', 'orange', 'teal', 'cyan', 'emerald', 'gray'] as const;
 
 const initialCategoryMap: { [key: string]: string } = {
-  startup: 'blue',
-  learn: 'green',
-  school: 'red',
-  train: 'purple',
-  meal: 'yellow',
-  commute: 'indigo',
+  lavoro: 'blue',
+  studio: 'green',
+  scuola: 'red',
+  allenamento: 'purple',
+  pasto: 'yellow',
+  spostamento: 'indigo',
   routine: 'pink',
 };
 
