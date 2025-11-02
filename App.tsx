@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { Event, SelectedSlot } from './types';
 import CalendarHeader from './components/CalendarHeader';
 import CalendarGrid from './components/CalendarGrid';
@@ -64,9 +64,82 @@ const generateInitialEvents = () => {
 };
 
 
+type SerializableEvent = Omit<Event, 'date'> & { date: string };
+
+interface SharedState {
+  events: SerializableEvent[];
+  categories: { [key: string]: string };
+}
+
+const encodeSharedState = (state: SharedState): string => {
+  const encoder = new TextEncoder();
+  const json = JSON.stringify(state);
+  const bytes = encoder.encode(json);
+  let binary = '';
+
+  bytes.forEach(byte => {
+    binary += String.fromCharCode(byte);
+  });
+
+  return btoa(binary);
+};
+
+const decodeSharedState = (value: string): SharedState | null => {
+  try {
+    const binary = atob(value);
+    const bytes = Uint8Array.from(binary, char => char.charCodeAt(0));
+    const decoder = new TextDecoder();
+    const json = decoder.decode(bytes);
+    const parsed = JSON.parse(json) as SharedState;
+
+    if (
+      !parsed ||
+      !Array.isArray(parsed.events) ||
+      !parsed.categories ||
+      typeof parsed.categories !== 'object' ||
+      Array.isArray(parsed.categories)
+    ) {
+      return null;
+    }
+
+    return parsed;
+  } catch (error) {
+    console.error('Failed to decode shared state from URL.', error);
+    return null;
+  }
+};
+
+const parseSharedStateFromUrl = (): SharedState | null => {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  const encodedState = params.get('state');
+
+  if (!encodedState) {
+    return null;
+  }
+
+  return decodeSharedState(encodedState);
+};
+
 const loadStoredEvents = (): Event[] => {
   if (typeof window === 'undefined') {
     return generateInitialEvents();
+  }
+
+  const sharedState = parseSharedStateFromUrl();
+
+  if (sharedState) {
+    const validEvents = sharedState.events.filter(event => event && typeof event.date === 'string');
+
+    if (validEvents.length) {
+      return validEvents.map(event => ({
+        ...event,
+        date: new Date(event.date),
+      }));
+    }
   }
 
   const storedEvents = window.localStorage.getItem(EVENTS_STORAGE_KEY);
@@ -95,6 +168,21 @@ const loadStoredEvents = (): Event[] => {
 const loadStoredCategories = (): { [key: string]: string } => {
   if (typeof window === 'undefined') {
     return initialCategoryMap;
+  }
+
+  const sharedState = parseSharedStateFromUrl();
+
+  if (sharedState) {
+    const entries = Object.entries(sharedState.categories).filter(
+      ([key, value]) => typeof key === 'string' && typeof value === 'string',
+    );
+
+    if (entries.length) {
+      return entries.reduce<{ [key: string]: string }>((acc, [key, value]) => {
+        acc[key] = value;
+        return acc;
+      }, {});
+    }
   }
 
   const storedCategories = window.localStorage.getItem(CATEGORY_STORAGE_KEY);
@@ -127,6 +215,8 @@ const App: React.FC = () => {
   const [colorMap, setColorMap] = useState<{ [key: string]: string }>(loadStoredCategories);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
 
+  const lastSharedStateRef = useRef<string | null>(null);
+
   useEffect(() => {
     if (typeof window === 'undefined') {
       return;
@@ -147,6 +237,36 @@ const App: React.FC = () => {
 
     window.localStorage.setItem(CATEGORY_STORAGE_KEY, JSON.stringify(colorMap));
   }, [colorMap]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const serializableEvents: SerializableEvent[] = events.map(event => ({
+      ...event,
+      date: event.date.toISOString(),
+    }));
+
+    const sharedState: SharedState = {
+      events: serializableEvents,
+      categories: colorMap,
+    };
+
+    const encoded = encodeSharedState(sharedState);
+
+    if (lastSharedStateRef.current === encoded) {
+      return;
+    }
+
+    lastSharedStateRef.current = encoded;
+
+    const params = new URLSearchParams(window.location.search);
+    params.set('state', encoded);
+
+    const newUrl = `${window.location.pathname}?${params.toString()}${window.location.hash}`;
+    window.history.replaceState(null, '', newUrl);
+  }, [events, colorMap]);
 
 
   const handlePrevWeek = useCallback(() => {
